@@ -9,7 +9,7 @@ Eaf::Eaf()
     mTimeIncrement = 0.001;
 }
 
-bool Eaf::readEaf(QString filename, bool useRelativePath)
+bool Eaf::readEaf(QString filename, PathBehavior pathBehavior)
 {
     mEafFilename = filename;
 
@@ -25,7 +25,7 @@ bool Eaf::readEaf(QString filename, bool useRelativePath)
     }
     file.close();
 
-    readWavFilename(useRelativePath);
+    readWavFilename(pathBehavior);
     if( mWavFilename.isEmpty() )
         return false;
 
@@ -40,30 +40,54 @@ bool Eaf::readEaf(QString filename, bool useRelativePath)
     return true;
 }
 
-bool Eaf::readWavFilename(bool useRelativePath)
+bool Eaf::readWavFilename(PathBehavior pathBehavior)
 {
     // find the media file
     QDomNodeList nameList = mDocument->elementsByTagName("MEDIA_DESCRIPTOR");
     if( nameList.count() == 0 )
         return false;
 
+    // this uses the relative path to the wav file
     QFileInfo info(mEafFilename);
+    QString relativePath = nameList.at(0).attributes().namedItem("RELATIVE_MEDIA_URL").toAttr().value();
+    relativePath.replace(QRegExp("^file:/"),"");
+    QDir dir = info.absoluteDir();
+    relativePath = QDir::cleanPath(dir.absoluteFilePath(relativePath));
 
-    if( useRelativePath )
+    // this uses the absolute path to the wav file
+    QString absolutePath = nameList.at(0).attributes().namedItem("MEDIA_URL").toAttr().value();
+    absolutePath.replace(QRegExp("^file:///"),"");
+
+    switch(pathBehavior)
     {
-        // this uses the relative path to the wav file
-        QFileInfo info(mEafFilename);
-        mWavFilename = nameList.at(0).attributes().namedItem("RELATIVE_MEDIA_URL").toAttr().value();
-        mWavFilename.replace(QRegExp("^file:/"),"");
-        QDir dir = info.absoluteDir();
-        mWavFilename = QDir::cleanPath(dir.absoluteFilePath(mWavFilename));
+    case TryRelativeThenAbsolute:
+        if( QFile::exists(relativePath) )
+            mWavFilename = relativePath;
+        else if( QFile::exists(absolutePath) )
+            mWavFilename = absolutePath;
+        else
+            return false;
+        break;
+    case TryAbsoluteThenRelative:
+        if( QFile::exists(absolutePath) )
+            mWavFilename = absolutePath;
+        else if( QFile::exists(relativePath) )
+            mWavFilename = relativePath;
+        else
+            return false;
+        break;
+    case OnlyUseRelative:
+        mWavFilename = relativePath;
+        if( !QFile::exists(relativePath) )
+            return false;
+        break;
+    case OnlyUseAbsolute:
+        mWavFilename = absolutePath;
+        if( !QFile::exists(absolutePath) )
+            return false;
+        break;
     }
-    else
-    {
-        // this uses the absolute path to the wav file
-        mWavFilename = nameList.at(0).attributes().namedItem("MEDIA_URL").toAttr().value();
-        mWavFilename.replace(QRegExp("^file:///"),"");
-    }
+
     return true;
 }
 

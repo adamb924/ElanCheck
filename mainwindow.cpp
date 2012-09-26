@@ -52,11 +52,38 @@ void MainWindow::setupMenu()
     file->addAction(tr("Exit"),this,SLOT(close()),QKeySequence("Ctrl+Q"));
 
     QMenu *options = new QMenu(tr("Options"));
-    mUseRelativePath = new QAction(tr("Use relative path"),options);
-    mUseRelativePath->setCheckable(true);
-    mUseRelativePath->setChecked(true);
-    options->addAction(mUseRelativePath);
     options->addAction(tr("Font..."),this,SLOT(changeFont()));
+
+    QMenu *pathSubmenu = new QMenu(tr("Path"));
+    mPathGroup = new QActionGroup(pathSubmenu);
+
+    QAction *aTryRelativeThenAbsolute = new QAction(tr("First try relative, then absolute"),pathSubmenu);
+    aTryRelativeThenAbsolute->setCheckable(true);
+    aTryRelativeThenAbsolute->setData( Eaf::TryRelativeThenAbsolute );
+    pathSubmenu->addAction(aTryRelativeThenAbsolute);
+    mPathGroup->addAction(aTryRelativeThenAbsolute);
+
+    QAction *aTryAbsoluteThenRelative = new QAction(tr("First try absolute, then relative"),pathSubmenu);
+    aTryAbsoluteThenRelative->setCheckable(true);
+    aTryAbsoluteThenRelative->setData( Eaf::TryAbsoluteThenRelative );
+    pathSubmenu->addAction(aTryAbsoluteThenRelative);
+    mPathGroup->addAction(aTryAbsoluteThenRelative);
+
+    QAction *aOnlyUseRelative = new QAction(tr("Only use relative path"),pathSubmenu);
+    aOnlyUseRelative->setCheckable(true);
+    aOnlyUseRelative->setData( Eaf::OnlyUseRelative );
+    pathSubmenu->addAction(aOnlyUseRelative);
+    mPathGroup->addAction(aOnlyUseRelative);
+
+    QAction *aOnlyUseAbsolute = new QAction(tr("Only use absolute path"),pathSubmenu);
+    aOnlyUseAbsolute->setCheckable(true);
+    aOnlyUseAbsolute->setData( Eaf::OnlyUseAbsolute );
+    pathSubmenu->addAction(aOnlyUseAbsolute);
+    mPathGroup->addAction(aOnlyUseAbsolute);
+
+    aTryRelativeThenAbsolute->setChecked(true);
+
+    options->addMenu(pathSubmenu);
 
     mTierMenu = new QMenu(tr("Tiers"));
     options->addMenu(mTierMenu);
@@ -119,7 +146,10 @@ void MainWindow::open()
     QString filename = QFileDialog::getOpenFileName(this,tr("Open"),QString(),"*.eaf");
     if( filename.isEmpty() )
         return;
-    if( !mEafFile.readEaf(filename, mUseRelativePath->isChecked()) )
+
+    Eaf::PathBehavior pathBehavior = (Eaf::PathBehavior)mPathGroup->checkedAction()->data().toInt();
+
+    if( !mEafFile.readEaf(filename, pathBehavior) )
         return;
 
     setUiElementsFromEafFile();

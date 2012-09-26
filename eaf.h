@@ -14,13 +14,19 @@ class Eaf
 public:
     Eaf();
 
+    enum PathBehavior {
+        TryRelativeThenAbsolute,
+        TryAbsoluteThenRelative,
+        OnlyUseRelative,
+        OnlyUseAbsolute
+    };
 
     QDomDocument* document();
     QList<Annotation>* annotations();
     void setFileChanged(bool changed);
     bool fileChanged();
 
-    bool readEaf(QString filename, bool useRelativePath = true);
+    bool readEaf(QString filename, PathBehavior pathBehavior = TryRelativeThenAbsolute);
     void readAnnotations(QString id);
 
     void sendDataToDOM(QString id);
@@ -39,7 +45,7 @@ private:
     qint64 timeFromId(QString id);
     void readTimeSlots();
     void readTierIds();
-    bool readWavFilename(bool useRelativePath);
+    bool readWavFilename(PathBehavior pathBehavior);
 
     Sound mWavFile;
 

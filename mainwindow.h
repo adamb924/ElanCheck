@@ -15,6 +15,7 @@ public:
     MainWindow(int argc, char *argv[], QWidget *parent = 0);
     ~MainWindow();
 
+
 private:
     // GUI Setup
     void setupMenu();
@@ -47,11 +48,10 @@ private:
     QString mCurrentTierId;
 
     // GUI Members
-    QActionGroup *mTierGroup;
+    QActionGroup *mTierGroup, *mPathGroup;
     QLabel *mFilename, *mPosition;
     QTextEdit* mAnnotation;
     QPushButton *mNext, *mPrevious, *mPlay;
-    QAction *mUseRelativePath;
     QMenu *mTierMenu;
     QAction *mOpen, *mSave, *mExit;
 
