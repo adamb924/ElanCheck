@@ -13,8 +13,7 @@ bool Eaf::readEaf(QString filename, bool useRelativePath)
 {
     mEafFilename = filename;
 
-    // this is actually easier than seeing whether the document has been changed, absent next/previous movements
-    bFileChanged = true;
+    bFileChanged = false;
 
     QFile file(mEafFilename);
     if (!file.open(QIODevice::ReadOnly))

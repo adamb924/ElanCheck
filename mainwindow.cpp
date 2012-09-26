@@ -257,6 +257,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     if( mAudioOutput != 0 )
         mAudioOutput->stop();
+
+    saveCurrentAnnotation();
+
     if (maybeSave()) {
         event->accept();
     } else {
@@ -321,5 +324,8 @@ void MainWindow::addTierActions()
         mTierGroup->addAction(action);
     }
     if( mEafFile.tiers()->count() > 0 )
+    {
+        mCurrentTierId = mTierGroup->actions().at(0)->text();
         mTierGroup->actions().at(0)->setChecked(true);
+    }
 }
