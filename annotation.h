@@ -15,6 +15,12 @@ public:
     QString mEndId;
     qint64 mEndTime;
     QByteArray mAudioData;
+
+    bool isFlagged() const;
+    void setFlag(bool value);
+
+private:
+    bool mFlag;
 };
 
 #endif // ANNOTATION_H

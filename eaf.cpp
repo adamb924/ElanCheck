@@ -98,13 +98,13 @@ void Eaf::readTimeSlots()
     {
         QString id = timeslotList.at(i).attributes().namedItem("TIME_SLOT_ID").toAttr().value();
         qint64 time = timeslotList.at(i).attributes().namedItem("TIME_VALUE").toAttr().value().toLong();
-        //        qDebug() << id << time;
         aTimeSlots.append( TimeSlot(id,time) );
     }
 }
 
 void Eaf::readTierIds()
 {
+    mTiers.clear();
     QDomNodeList tierList = mDocument->elementsByTagName("TIER");
     for(int i=0; i<tierList.count(); i++)
     {
@@ -132,6 +132,8 @@ void Eaf::readAnnotations(QString id)
 
                 aAnnotations.append( Annotation(value,startId,startTime,endId,endTime));
                 aAnnotations.last().mAudioData = mWavFile.mAudioData.mid(mWavFile.bytePositionAtTime(startTime*mTimeIncrement), mWavFile.bytePositionAtTime(endTime*mTimeIncrement)-mWavFile.bytePositionAtTime(startTime*mTimeIncrement));
+                if( annotationList.at(j).toElement().elementsByTagName("ANNOTATION_VALUE").at(0).toElement().hasAttribute("flag") )
+                    aAnnotations.last().setFlag(annotationList.at(j).toElement().elementsByTagName("ANNOTATION_VALUE").at(0).toElement().attribute("flag").toLower() == "true" );
             }
             return;
         }
@@ -176,6 +178,7 @@ void Eaf::sendDataToDOM(QString id)
                 QDomElement newNodeTag = mDocument->createElement("ANNOTATION_VALUE");
                 QDomText newNodeText = mDocument->createTextNode(aAnnotations.at(i).mValue);
                 newNodeTag.appendChild(newNodeText);
+                newNodeTag.setAttribute("flag", aAnnotations.at(i).isFlagged() ? "true" : "false" );
 
                 annotationList.at(i).toElement().replaceChild(newNodeTag, ann_val);
             }
@@ -205,4 +208,140 @@ QString Eaf::filename() const
 QStringList* Eaf::tiers()
 {
     return &mTiers;
+}
+
+int Eaf::getNextAnnotation(int current, FlagBehavior flag)
+{
+    if( aAnnotations.count() == 0 )
+        return -1;
+
+    int position = current;
+    if( flag == ShowAll )
+    {
+        position++;
+        if( position > aAnnotations.count() - 1 )
+            position = aAnnotations.count() - 1;
+    } else {
+        for(int i=current+1; i<aAnnotations.count(); i++)
+        {
+            if( aAnnotations.at(i).isFlagged() )
+            {
+                position = i;
+                break;
+            }
+         }
+    }
+    return position;
+}
+
+int Eaf::getPreviousAnnotation(int current, FlagBehavior flag)
+{
+    if( aAnnotations.count() == 0 )
+        return -1;
+
+    int position = current;
+    if( flag == ShowAll )
+    {
+        position--;
+        if( position < 0 )
+            position = 0;
+    } else {
+        for(int i=current-1; i>0; i--)
+        {
+            if( aAnnotations.at(i).isFlagged() )
+            {
+                position = i;
+                break;
+            }
+         }
+    }
+    return position;
+}
+
+int Eaf::getFirstAnnotation(FlagBehavior flag)
+{
+    if( aAnnotations.count() == 0 )
+        return -1;
+
+    int position;
+    if( flag == ShowAll )
+    {
+        position = 0;
+    }
+    else
+    {
+        position = -1;
+        for(int i=0; i<aAnnotations.count(); i++)
+        {
+            if( aAnnotations.at(i).isFlagged() )
+            {
+                position = i;
+                break;
+            }
+         }
+    }
+    return position;
+}
+
+int Eaf::getLastAnnotation(FlagBehavior flag)
+{
+    if( aAnnotations.count() == 0 )
+        return -1;
+
+    int position;
+    if( flag == ShowAll )
+    {
+        position = aAnnotations.count() - 1;
+    }
+    else
+    {
+        position = -1;
+        for(int i=aAnnotations.count()-1; i>0; i--)
+        {
+            if( aAnnotations.at(i).isFlagged() )
+            {
+                position = i;
+                break;
+            }
+         }
+    }
+    return position;
+}
+
+bool Eaf::isFirstAnnotation(int current, FlagBehavior flag)
+{
+    if( flag == ShowAll )
+    {
+        return current == 0;
+    }
+    else
+    {
+        for(int i=current-1; i>0; i--)
+            if( aAnnotations.at(i).isFlagged() )
+                return false;
+        return true;
+    }
+}
+
+bool Eaf::isLastAnnotation(int current, FlagBehavior flag)
+{
+    if( flag == ShowAll )
+    {
+        return current == aAnnotations.count()-1;
+    }
+    else
+    {
+        for(int i=current+1; i<aAnnotations.count(); i++)
+            if( aAnnotations.at(i).isFlagged() )
+                return false;
+        return true;
+    }
+}
+
+bool Eaf::hasFlags()
+{
+    for(int i=0; i < aAnnotations.count(); i++ )
+        if( aAnnotations.at(i).isFlagged() )
+            return true;
+    return false;
 }

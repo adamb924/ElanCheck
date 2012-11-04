@@ -14,6 +14,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     setupUi();
     setupMenu();
+    updateStyleSheet();
 
     if( argc == 2 )
     {
@@ -51,9 +52,47 @@ void MainWindow::setupMenu()
     file->addSeparator();
     file->addAction(tr("Exit"),this,SLOT(close()),QKeySequence("Ctrl+Q"));
 
-    QMenu *options = new QMenu(tr("Options"));
-    options->addAction(tr("Font..."),this,SLOT(changeFont()));
+    QMenu *goTo = new QMenu(tr("Go to"));
+    goTo->addAction(tr("First"),this,SLOT(first()),QKeySequence("Ctrl+F"));
+    goTo->addAction(tr("Last"),this,SLOT(last()),QKeySequence("Ctrl+L"));
+    goTo->addAction(tr("Go to..."),this,SLOT(goTo()),QKeySequence("Ctrl+G"));
 
+    QMenu *options = new QMenu(tr("Options"));
+
+
+    mFlag = new QAction(tr("Flag"),options);
+    mFlag->setShortcut(QKeySequence("F1"));
+    mFlag->setCheckable(true);
+    connect(mFlag,SIGNAL(toggled(bool)),this,SLOT(flagAnnotation(bool)));
+    connect(mFlag,SIGNAL(toggled(bool)),this,SLOT(updateStyleSheet()));
+    options->addAction(mFlag);
+    options->addSeparator();
+
+    options->addAction(tr("Font..."),this,SLOT(changeFont()));
+    options->addSeparator();
+
+
+    // Flag submenu
+    QMenu *flagSubmenu = new QMenu(tr("Flags"));
+    mFlagGroup = new QActionGroup(flagSubmenu);
+
+    mShowAll = new QAction(tr("Show all"),flagSubmenu);
+    mShowAll->setCheckable(true);
+    mShowAll->setData( Eaf::ShowAll );
+    flagSubmenu->addAction(mShowAll);
+    mFlagGroup->addAction(mShowAll);
+
+    mShowFlagged = new QAction(tr("Show flagged"),flagSubmenu);
+    mShowFlagged->setCheckable(true);
+    mShowFlagged->setData( Eaf::ShowFlagged);
+    flagSubmenu->addAction(mShowFlagged);
+    mFlagGroup->addAction(mShowFlagged);
+
+    connect(mFlagGroup,SIGNAL(selected(QAction*)),this,SLOT(selectFlagBehavior(QAction*)));
+
+    mShowAll->setChecked(true);
+
+    // Path submenu
     QMenu *pathSubmenu = new QMenu(tr("Path"));
     mPathGroup = new QActionGroup(pathSubmenu);
 
@@ -83,6 +122,7 @@ void MainWindow::setupMenu()
 
     aTryRelativeThenAbsolute->setChecked(true);
 
+    options->addMenu(flagSubmenu);
     options->addMenu(pathSubmenu);
 
     mTierMenu = new QMenu(tr("Tiers"));
@@ -90,6 +130,7 @@ void MainWindow::setupMenu()
 
     QMenuBar *menubar = menuBar();
     menubar->addMenu(file);
+    menubar->addMenu(goTo);
     menubar->addMenu(options);
 }
 
@@ -132,7 +173,6 @@ void MainWindow::setupUi()
     // not great
     mFontFamily = "Times New Roman";
     mFontPointSize = 28;
-    mAnnotation->setStyleSheet(QString("font: %1pt \"%2\";").arg(mFontPointSize).arg(mFontFamily));
 
     // initially disable these
     mNext->setEnabled(false);
@@ -157,6 +197,11 @@ void MainWindow::open()
 
 void MainWindow::setUiElementsFromEafFile()
 {
+    if( mEafFile.hasFlags() )
+        mShowFlagged->setChecked(true);
+    else
+        mShowAll->setChecked(true);
+
     setupAudioOutput();
 
     addTierActions();
@@ -173,7 +218,7 @@ void MainWindow::setUiElementsForTier()
     {
         mPlay->setEnabled(true);
         mAnnotation->setEnabled(true);
-        setAnnotation(0);
+        setAnnotation( mEafFile.getFirstAnnotation(getFlagBehavior()) );
     }
     else
     {
@@ -184,14 +229,15 @@ void MainWindow::setUiElementsForTier()
 
 void MainWindow::save()
 {
-    QString saveName = mEafFile.filename();
+    if( mEafFile.filename().isEmpty() )
+        return;
 
     saveCurrentAnnotation();
 
     mEafFile.sendDataToDOM(mCurrentTierId);
 
     QString xml = mEafFile.document()->toString(4);
-    QFile outfile(saveName);
+    QFile outfile(mEafFile.filename());
     if (!outfile.open(QIODevice::WriteOnly))
         return;
     outfile.write(xml.toUtf8());
@@ -200,48 +246,45 @@ void MainWindow::save()
     mEafFile.setFileChanged(false);
 }
 
+Eaf::FlagBehavior MainWindow::getFlagBehavior() const
+{
+    return (Eaf::FlagBehavior)mFlagGroup->checkedAction()->data().toInt();
+}
+
 
 void MainWindow::nextAnnotation()
 {
     saveCurrentAnnotation();
-    setAnnotation( mCurrentAnnotation + 1 );
+    setAnnotation( mEafFile.getNextAnnotation(mCurrentAnnotation, getFlagBehavior() ) );
 }
 
 void MainWindow::previousAnnotation()
 {
     saveCurrentAnnotation();
-    setAnnotation( mCurrentAnnotation - 1 );
+    setAnnotation( mEafFile.getPreviousAnnotation(mCurrentAnnotation, getFlagBehavior() ) );
 }
 
 void MainWindow::setAnnotation(int i)
 {
+    if( i == -1 || mEafFile.annotations()->count() == 0 )
+        return;
+
     if( mAudioOutput != 0 )
         mAudioOutput->stop();
 
     mCurrentAnnotation = i;
-    // at least zero
-    if( mCurrentAnnotation <= 0 )
-    {
-        mCurrentAnnotation = 0;
-        mPrevious->setEnabled(false);
-    }
-    else
-    {
-        mPrevious->setEnabled(true);
-    }
-    // not to large either
-    if( mCurrentAnnotation >= mEafFile.annotations()->count() - 1 )
-    {
-        mCurrentAnnotation = mEafFile.annotations()->count() - 1;
-        mNext->setEnabled(false);
-    }
-    else
-    {
-        mNext->setEnabled(true);
-    }
 
-    if( mEafFile.annotations()->count() == 0 )
-        return;
+    if( mEafFile.isFirstAnnotation(mCurrentAnnotation, getFlagBehavior()) )
+        mPrevious->setEnabled(false);
+    else
+        mPrevious->setEnabled(true);
+
+    if( mEafFile.isLastAnnotation(mCurrentAnnotation, getFlagBehavior()) )
+        mNext->setEnabled(false);
+    else
+        mNext->setEnabled(true);
+
+    mFlag->setChecked(mEafFile.annotations()->at(mCurrentAnnotation).isFlagged() );
 
     mAnnotation->setText( mEafFile.annotations()->at(mCurrentAnnotation).mValue );
     mPosition->setText( tr("%1/%2").arg(mCurrentAnnotation+1).arg(mEafFile.annotations()->count()));
@@ -254,6 +297,11 @@ void MainWindow::saveCurrentAnnotation()
     if( (*mEafFile.annotations())[mCurrentAnnotation].mValue != mAnnotation->toPlainText() )
     {
         (*mEafFile.annotations())[mCurrentAnnotation].mValue = mAnnotation->toPlainText();
+        mEafFile.setFileChanged(true);
+    }
+    if( (*mEafFile.annotations())[mCurrentAnnotation].isFlagged() != mFlag->isChecked() )
+    {
+        (*mEafFile.annotations())[mCurrentAnnotation].setFlag(mFlag->isChecked());
         mEafFile.setFileChanged(true);
     }
 }
@@ -335,14 +383,18 @@ void MainWindow::selectTier(QAction* action)
     setUiElementsForTier();
 }
 
+void MainWindow::selectFlagBehavior(QAction* action)
+{
+    setAnnotation( mEafFile.getFirstAnnotation(getFlagBehavior()) );
+}
+
 void MainWindow::addTierActions()
 {
+    mTierMenu->clear();
+
     if( mTierGroup != 0 )
-    {
-        for(int i=0; i<mTierGroup->actions().count(); i++)
-            mTierMenu->removeAction(mTierGroup->actions().at(i));
         delete mTierGroup;
-    }
+
     mTierGroup = new QActionGroup(mTierMenu);
     connect(mTierGroup,SIGNAL(selected(QAction*)),this,SLOT(selectTier(QAction*)));
 
@@ -358,4 +410,41 @@ void MainWindow::addTierActions()
         mCurrentTierId = mTierGroup->actions().at(0)->text();
         mTierGroup->actions().at(0)->setChecked(true);
     }
+}
+
+void MainWindow::first()
+{
+    saveCurrentAnnotation();
+    setAnnotation( mEafFile.getFirstAnnotation(getFlagBehavior()) );
+}
+
+void MainWindow::last()
+{
+    saveCurrentAnnotation();
+    setAnnotation( mEafFile.getLastAnnotation(getFlagBehavior()) );
+}
+
+void MainWindow::goTo()
+{
+    bool ok;
+    int i = QInputDialog::getInt(this, tr("Elan Check"),
+                                 tr("Which?"), 1, 1, mEafFile.annotations()->count(), 1, &ok);
+    if (ok)
+    {
+        saveCurrentAnnotation();
+        setAnnotation( i-1 );
+    }
+}
+
+void MainWindow::flagAnnotation(bool flag)
+{
+    (*mEafFile.annotations())[mCurrentAnnotation].setFlag(flag);
+}
+
+void MainWindow::updateStyleSheet()
+{
+    QString styleSheet = QString("font: %1pt \"%2\";").arg(mFontPointSize).arg(mFontFamily);
+    if( mAnnotation->isEnabled() )
+        styleSheet +=  "background-color: " + (mFlag->isChecked() ? QString("#FFFF99") : QString("#FFFFFF")) + ";";
+    mAnnotation->setStyleSheet(styleSheet);
 }

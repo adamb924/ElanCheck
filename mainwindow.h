@@ -40,20 +40,21 @@ private:
     void setUiElementsFromEafFile();
     void setUiElementsForTier();
 
-
     int mCurrentAnnotation;
     QString mFontFamily;
     int mFontPointSize;
 
+    Eaf::FlagBehavior getFlagBehavior() const;
+
     QString mCurrentTierId;
 
     // GUI Members
-    QActionGroup *mTierGroup, *mPathGroup;
+    QActionGroup *mTierGroup, *mPathGroup, *mFlagGroup;
     QLabel *mFilename, *mPosition;
     QTextEdit* mAnnotation;
     QPushButton *mNext, *mPrevious, *mPlay;
     QMenu *mTierMenu;
-    QAction *mOpen, *mSave, *mExit;
+    QAction *mShowAll, *mShowFlagged, *mFlag;
 
 private slots:
     void open();
@@ -63,6 +64,12 @@ private slots:
     void previousAnnotation();
     void changeFont();
     void selectTier(QAction* action);
+    void selectFlagBehavior(QAction* action);
+    void first();
+    void last();
+    void goTo();
+    void flagAnnotation(bool flag);
+    void updateStyleSheet();
 };
 
 #endif // MAINWINDOW_H

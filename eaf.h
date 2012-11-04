@@ -21,6 +21,11 @@ public:
         OnlyUseAbsolute
     };
 
+    enum FlagBehavior {
+        ShowAll,
+        ShowFlagged
+    };
+
     QDomDocument* document();
     QList<Annotation>* annotations();
     void setFileChanged(bool changed);
@@ -35,6 +40,16 @@ public:
     QString filename() const;
     QStringList* tiers();
 
+    int getNextAnnotation(int current, FlagBehavior flag);
+    int getPreviousAnnotation(int current, FlagBehavior flag);
+
+    int getFirstAnnotation(FlagBehavior flag);
+    int getLastAnnotation(FlagBehavior flag);
+
+    bool isFirstAnnotation(int current, FlagBehavior flag);
+    bool isLastAnnotation(int current, FlagBehavior flag);
+
+    bool hasFlags();
 
 private:
     QString mEafFilename;
