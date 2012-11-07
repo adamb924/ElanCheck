@@ -345,3 +345,21 @@ bool Eaf::hasFlags()
             return true;
     return false;
 }
+
+int Eaf::nFlags()
+{
+    int count=0;
+    for(int i=0; i < aAnnotations.count(); i++ )
+        if( aAnnotations.at(i).isFlagged() )
+            count++;
+    return count;
+}
+
+int Eaf::flagPosition(int current)
+{
+    int count=0;
+    for(int i=0; i < current; i++ )
+        if( aAnnotations.at(i).isFlagged() )
+            count++;
+    return count;
+}

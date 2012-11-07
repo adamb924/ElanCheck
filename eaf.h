@@ -51,6 +51,9 @@ public:
 
     bool hasFlags();
 
+    int nFlags();
+    int flagPosition(int current);
+
 private:
     QString mEafFilename;
     QString mWavFilename;

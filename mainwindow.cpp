@@ -274,12 +274,14 @@ void MainWindow::setAnnotation(int i)
 
     mCurrentAnnotation = i;
 
-    if( mEafFile.isFirstAnnotation(mCurrentAnnotation, getFlagBehavior()) )
+    Eaf::FlagBehavior flagBehavior = getFlagBehavior();
+
+    if( mEafFile.isFirstAnnotation(mCurrentAnnotation, flagBehavior ) )
         mPrevious->setEnabled(false);
     else
         mPrevious->setEnabled(true);
 
-    if( mEafFile.isLastAnnotation(mCurrentAnnotation, getFlagBehavior()) )
+    if( mEafFile.isLastAnnotation(mCurrentAnnotation, flagBehavior ) )
         mNext->setEnabled(false);
     else
         mNext->setEnabled(true);
@@ -287,7 +289,10 @@ void MainWindow::setAnnotation(int i)
     mFlag->setChecked(mEafFile.annotations()->at(mCurrentAnnotation).isFlagged() );
 
     mAnnotation->setText( mEafFile.annotations()->at(mCurrentAnnotation).mValue );
-    mPosition->setText( tr("%1/%2").arg(mCurrentAnnotation+1).arg(mEafFile.annotations()->count()));
+    if( flagBehavior == Eaf::ShowAll )
+        mPosition->setText( tr("%1/%2").arg(mCurrentAnnotation+1).arg(mEafFile.annotations()->count()));
+    else if( flagBehavior == Eaf::ShowFlagged )
+        mPosition->setText( tr("%1/%2 (%3/%4)").arg(mCurrentAnnotation+1).arg(mEafFile.annotations()->count()).arg(mEafFile.flagPosition(mCurrentAnnotation)+1).arg(mEafFile.nFlags()) );
 }
 
 void MainWindow::saveCurrentAnnotation()
