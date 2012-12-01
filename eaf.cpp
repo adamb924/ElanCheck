@@ -17,9 +17,13 @@ bool Eaf::readEaf(QString filename, PathBehavior pathBehavior)
 
     QFile file(mEafFilename);
     if (!file.open(QIODevice::ReadOnly))
+    {
+        QMessageBox::critical(0,tr("Error reading file"),tr("The file %1 could not be opened.").arg(filename));
         return false;
+    }
     mDocument = new QDomDocument;
     if (!mDocument->setContent(&file)) {
+        QMessageBox::critical(0,tr("Error reading file"),tr("QDomDocument::setContent returned false."));
         file.close();
         return false;
     }
@@ -27,7 +31,10 @@ bool Eaf::readEaf(QString filename, PathBehavior pathBehavior)
 
     readWavFilename(pathBehavior);
     if( mWavFilename.isEmpty() )
+    {
+        QMessageBox::critical(0,tr("Error reading file"),tr("The WAV file could not be read."));
         return false;
+    }
 
     mWavFile.readWav(mWavFilename);
 

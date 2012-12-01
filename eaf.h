@@ -11,6 +11,7 @@ class QDomDocument;
 
 class Eaf
 {
+    Q_DECLARE_TR_FUNCTIONS(Eaf)
 public:
     Eaf();
 

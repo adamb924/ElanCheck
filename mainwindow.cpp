@@ -190,9 +190,9 @@ void MainWindow::open()
     Eaf::PathBehavior pathBehavior = (Eaf::PathBehavior)mPathGroup->checkedAction()->data().toInt();
 
     if( !mEafFile.readEaf(filename, pathBehavior) )
-        return;
-
-    setUiElementsFromEafFile();
+        QMessageBox::critical(this,tr("Error reading file"),tr("There was an error reading %1, so the file has not been opened.").arg(filename));
+    else
+        setUiElementsFromEafFile();
 }
 
 void MainWindow::setUiElementsFromEafFile()
