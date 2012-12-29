@@ -64,7 +64,7 @@ private:
     qint64 timeFromId(QString id);
     void readTimeSlots();
     void readTierIds();
-    bool readWavFilename(PathBehavior pathBehavior);
+    QStringList readWavFilename(PathBehavior pathBehavior);
 
     Sound mWavFile;
 

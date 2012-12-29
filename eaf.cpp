@@ -29,10 +29,10 @@ bool Eaf::readEaf(QString filename, PathBehavior pathBehavior)
     }
     file.close();
 
-    readWavFilename(pathBehavior);
+    QStringList attempts = readWavFilename(pathBehavior);
     if( mWavFilename.isEmpty() )
     {
-        QMessageBox::critical(0,tr("Error reading file"),tr("The WAV file could not be read."));
+        QMessageBox::critical(0,tr("Error reading file"),tr("The WAV file could not be read. (Tried: %1)").arg(attempts.join(", ")));
         return false;
     }
 
@@ -47,12 +47,14 @@ bool Eaf::readEaf(QString filename, PathBehavior pathBehavior)
     return true;
 }
 
-bool Eaf::readWavFilename(PathBehavior pathBehavior)
+QStringList Eaf::readWavFilename(PathBehavior pathBehavior)
 {
+    QStringList attempts;
+
     // find the media file
     QDomNodeList nameList = mDocument->elementsByTagName("MEDIA_DESCRIPTOR");
     if( nameList.count() == 0 )
-        return false;
+        return attempts;
 
     // this uses the relative path to the wav file
     QFileInfo info(mEafFilename);
@@ -65,37 +67,42 @@ bool Eaf::readWavFilename(PathBehavior pathBehavior)
     QString absolutePath = nameList.at(0).attributes().namedItem("MEDIA_URL").toAttr().value();
     absolutePath.replace(QRegExp("^file:///"),"");
 
+
     switch(pathBehavior)
     {
     case TryRelativeThenAbsolute:
+        attempts << relativePath << absolutePath;
         if( QFile::exists(relativePath) )
             mWavFilename = relativePath;
         else if( QFile::exists(absolutePath) )
             mWavFilename = absolutePath;
         else
-            return false;
+            return attempts;
         break;
     case TryAbsoluteThenRelative:
+        attempts << absolutePath << relativePath;
         if( QFile::exists(absolutePath) )
             mWavFilename = absolutePath;
         else if( QFile::exists(relativePath) )
             mWavFilename = relativePath;
         else
-            return false;
+            return attempts;
         break;
     case OnlyUseRelative:
+        attempts << relativePath;
         mWavFilename = relativePath;
         if( !QFile::exists(relativePath) )
-            return false;
+            return attempts;
         break;
     case OnlyUseAbsolute:
+        attempts << absolutePath;
         mWavFilename = absolutePath;
         if( !QFile::exists(absolutePath) )
-            return false;
+            return attempts;
         break;
     }
 
-    return true;
+    return attempts;
 }
 
 void Eaf::readTimeSlots()
