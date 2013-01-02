@@ -444,6 +444,7 @@ void MainWindow::goTo()
 void MainWindow::flagAnnotation(bool flag)
 {
     (*mEafFile.annotations())[mCurrentAnnotation].setFlag(flag);
+    mEafFile.setFileChanged(true);
 }
 
 void MainWindow::updateStyleSheet()
