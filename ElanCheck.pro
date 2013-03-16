@@ -15,10 +15,12 @@ SOURCES += main.cpp\
     timeslot.cpp \
     annotation.cpp \
     sound.cpp \
-    eaf.cpp
+    eaf.cpp \
+    whitespacehighlighter.cpp
 
 HEADERS  += mainwindow.h \
     timeslot.h \
     annotation.h \
     sound.h \
-    eaf.h
+    eaf.h \
+    whitespacehighlighter.h

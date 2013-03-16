@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 
+#include "whitespacehighlighter.h"
+
 #include <QtWidgets>
 #include <QDomDocument>
 #include <QtDebug>
@@ -11,6 +13,8 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     // make sure some pointers are null
     mAudioOutput = 0;
     mTierGroup = 0;
+
+    mHighlighter = new WhitespaceHighlighter(this);
 
     setupUi();
     setupMenu();
@@ -30,6 +34,7 @@ MainWindow::~MainWindow()
         mAudioOutput->stop();
         delete mAudioOutput;
     }
+    mHighlighter = 0;
 }
 
 void MainWindow::setupAudioOutput()
@@ -67,6 +72,13 @@ void MainWindow::setupMenu()
     connect(mFlag,SIGNAL(toggled(bool)),this,SLOT(updateStyleSheet()));
     options->addAction(mFlag);
     options->addSeparator();
+
+
+    QAction * highlightWhitespace = new QAction(tr("Highlight whitespace"), options);
+    highlightWhitespace->setCheckable(true);
+    options->addAction(highlightWhitespace);
+    connect(highlightWhitespace, SIGNAL(toggled(bool)), this, SLOT(highlightWhitespace(bool)));
+    highlightWhitespace->setChecked(true);
 
     options->addAction(tr("Font..."),this,SLOT(changeFont()));
     options->addSeparator();
@@ -453,4 +465,12 @@ void MainWindow::updateStyleSheet()
     if( mAnnotation->isEnabled() )
         styleSheet +=  "background-color: " + (mFlag->isChecked() ? QString("#FFFF99") : QString("#FFFFFF")) + ";";
     mAnnotation->setStyleSheet(styleSheet);
+}
+
+void MainWindow::highlightWhitespace(bool flag)
+{
+    if( flag)
+        mHighlighter->setDocument(mAnnotation->document());
+    else
+        mHighlighter->setDocument(0);
 }

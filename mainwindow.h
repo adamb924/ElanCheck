@@ -56,6 +56,8 @@ private:
     QMenu *mTierMenu;
     QAction *mShowAll, *mShowFlagged, *mFlag;
 
+    QSyntaxHighlighter *mHighlighter;
+
 private slots:
     void open();
     void save();
@@ -70,6 +72,7 @@ private slots:
     void goTo();
     void flagAnnotation(bool flag);
     void updateStyleSheet();
+    void highlightWhitespace(bool flag);
 };
 
 #endif // MAINWINDOW_H
