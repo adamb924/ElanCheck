@@ -1,5 +1,6 @@
 #include "sound.h"
 
+#include <QtWidgets>
 #include <QtMultimedia>
 
 Sound::Sound()

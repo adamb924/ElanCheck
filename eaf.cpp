@@ -1,7 +1,7 @@
 #include "eaf.h"
 
 #include <QtXml>
-#include <QtGui>
+#include <QtWidgets>
 #include <QtMultimedia>
 
 Eaf::Eaf()

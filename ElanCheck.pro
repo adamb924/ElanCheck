@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui xml multimedia
+QT       += widgets xml multimedia
 
 TARGET = ElanCheck
 TEMPLATE = app

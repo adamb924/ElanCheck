@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QDomDocument>
 #include <QtDebug>
 #include <QtMultimedia>
@@ -88,7 +88,7 @@ void MainWindow::setupMenu()
     flagSubmenu->addAction(mShowFlagged);
     mFlagGroup->addAction(mShowFlagged);
 
-    connect(mFlagGroup,SIGNAL(selected(QAction*)),this,SLOT(selectFlagBehavior(QAction*)));
+    connect(mFlagGroup,SIGNAL(triggered(QAction*)),this,SLOT(selectFlagBehavior(QAction*)));
 
     mShowAll->setChecked(true);
 
@@ -401,7 +401,7 @@ void MainWindow::addTierActions()
         delete mTierGroup;
 
     mTierGroup = new QActionGroup(mTierMenu);
-    connect(mTierGroup,SIGNAL(selected(QAction*)),this,SLOT(selectTier(QAction*)));
+    connect(mTierGroup,SIGNAL(triggered(QAction*)),this,SLOT(selectTier(QAction*)));
 
     for(int i=0; i<mEafFile.tiers()->count(); i++)
     {
