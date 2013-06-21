@@ -325,8 +325,9 @@ void MainWindow::saveCurrentAnnotation()
 
 void MainWindow::play()
 {
-    if( mAudioOutput != 0 )
-        mAudioOutput->stop();
+    if( mAudioOutput == 0 )
+        return;
+    mAudioOutput->stop();
     if( mEafFile.annotations()->count() == 0 )
         return;
 

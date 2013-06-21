@@ -22,11 +22,13 @@ bool Sound::readWav(QString filename)
             return false;
         }
 
-        char *data = header.data();
-
-        mSampleRate = *((long*)data + 6);
-        mBitsPerSample = *(data+34);
-        mNChannels = *(data+22);
+        QDataStream stream(&header, QIODevice::ReadOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        stream.skipRawData(22);
+        stream >> mNChannels;
+        stream >> mSampleRate;
+        stream.skipRawData(6);
+        stream >> mBitsPerSample;
 
         audio_file.seek(44); // skip wav header
         mAudioData = audio_file.readAll();
